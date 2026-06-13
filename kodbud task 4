@@ -1,0 +1,153 @@
+import tkinter as tk
+from tkinter import messagebox
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+
+# ======================================
+# Training Dataset
+# ======================================
+data = {
+    "message": [
+        "Congratulations you won a free iPhone",
+        "Claim your cash reward now",
+        "Win money instantly click here",
+        "Free entry in a prize draw",
+        "Urgent claim your reward today",
+        "You have won 10000 dollars",
+        "Exclusive offer click now",
+        "Get free gift card today",
+        "Meeting at 10 AM tomorrow",
+        "Please send the project report",
+        "Let's have lunch together",
+        "Can we discuss the assignment",
+        "Thank you for your help",
+        "The meeting has been rescheduled",
+        "Please find attached document",
+        "See you in class tomorrow",
+        "Project submission deadline is Friday",
+        "Let's work on the presentation"
+    ],
+    "label": [
+        "spam","spam","spam","spam","spam","spam","spam","spam",
+        "ham","ham","ham","ham","ham","ham","ham","ham","ham","ham"
+    ]
+}
+
+df = pd.DataFrame(data)
+
+# Convert labels
+df["label"] = df["label"].map({"ham": 0, "spam": 1})
+
+# ======================================
+# TF-IDF Vectorization
+# ======================================
+vectorizer = TfidfVectorizer(stop_words="english")
+
+X = vectorizer.fit_transform(df["message"])
+y = df["label"]
+
+# ======================================
+# Train Naive Bayes Model
+# ======================================
+model = MultinomialNB()
+model.fit(X, y)
+
+# ======================================
+# Prediction Function
+# ======================================
+def check_spam():
+    email_text = text_box.get("1.0", tk.END).strip()
+
+    if email_text == "":
+        messagebox.showwarning("Warning", "Please enter an email message.")
+        return
+
+    transformed_text = vectorizer.transform([email_text])
+
+    prediction = model.predict(transformed_text)[0]
+    probability = model.predict_proba(transformed_text)[0]
+
+    spam_prob = probability[1] * 100
+    ham_prob = probability[0] * 100
+
+    if prediction == 1:
+        result_label.config(
+            text=f"⚠ SPAM EMAIL\nSpam Probability: {spam_prob:.2f}%",
+            fg="red"
+        )
+    else:
+        result_label.config(
+            text=f"✓ HAM EMAIL\nHam Probability: {ham_prob:.2f}%",
+            fg="green"
+        )
+
+# ======================================
+# Clear Function
+# ======================================
+def clear_text():
+    text_box.delete("1.0", tk.END)
+    result_label.config(text="")
+
+# ======================================
+# GUI Window
+# ======================================
+root = tk.Tk()
+root.title("Email Spam Detection")
+root.geometry("700x500")
+root.configure(bg="white")
+
+title = tk.Label(
+    root,
+    text="Email Spam Detection Using Naive Bayes",
+    font=("Arial", 18, "bold"),
+    bg="white"
+)
+title.pack(pady=15)
+
+instruction = tk.Label(
+    root,
+    text="Enter Email Message:",
+    font=("Arial", 12),
+    bg="white"
+)
+instruction.pack()
+
+text_box = tk.Text(
+    root,
+    height=10,
+    width=70,
+    font=("Arial", 11)
+)
+text_box.pack(pady=10)
+
+button_frame = tk.Frame(root, bg="white")
+button_frame.pack()
+
+check_btn = tk.Button(
+    button_frame,
+    text="Check Spam",
+    font=("Arial", 12, "bold"),
+    command=check_spam,
+    width=15
+)
+check_btn.grid(row=0, column=0, padx=10)
+
+clear_btn = tk.Button(
+    button_frame,
+    text="Clear",
+    font=("Arial", 12, "bold"),
+    command=clear_text,
+    width=15
+)
+clear_btn.grid(row=0, column=1, padx=10)
+
+result_label = tk.Label(
+    root,
+    text="",
+    font=("Arial", 16, "bold"),
+    bg="white"
+)
+result_label.pack(pady=25)
+
+root.mainloop()
